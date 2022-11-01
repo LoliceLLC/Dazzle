@@ -15,6 +15,9 @@ HeroesCore.AddOptionIcon(dazzle.Enable, '~/MenuIcons/Enable/enable_check_boxed.p
 dazzle.Percent = HeroesCore.AddOptionSlider({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Percent of max HP', 1, 100, 5)
 HeroesCore.AddMenuIcon({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Auto Shallow Grave' }, 'panorama/images/spellicons/dazzle_shallow_grave_png.vtex_c')
 HeroesCore.AddOptionIcon(dazzle.Percent, '~/MenuIcons/bar_ally.png')
+-- Use Grave if enemy is nearly
+dazzle.NearlyGraveUse = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Use Grave if enemy is nearly', true)
+HeroesCore.AddOptionIcon(dazzle.NearlyGraveUse, '~/MenuIcons/horizontal.png')
 -- Auto Grave in FalsePromise
 dazzle.GraveInPromise = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Auto grave in FalsePromise', false)
 Menu.AddOptionTip(dazzle.GraveInPromise, 'Automatically cast FalsePromise at the end.')
@@ -75,7 +78,7 @@ function dazzle.GetTeammates()
 end
 
 local function UpdateInfo()
-    grave = NPC.GetAbility(myHero, 'dazzle_shallow_grave')
+    ShallowGrave = NPC.GetAbility(MyHero, 'dazzle_shallow_grave')
 end
 
 local function GetPercent(percent,maxvalue)
@@ -86,7 +89,7 @@ local function GetPercent(percent,maxvalue)
 end
 
 local function GetShallowGraveRadius()
-    GraveRange = Ability.GetCastRange(NPC.GetAbility(myHero, 'dazzle_shallow_grave'))
+    GraveRange = Ability.GetCastRange(NPC.GetAbility(MyHero, 'dazzle_shallow_grave'))
 end
 
 local function GetTheRightHero()
@@ -95,7 +98,7 @@ local function GetTheRightHero()
             if HeroSettings[hero].enabled then
                 if Entity.GetHealth(hero) < GetPercent(Menu.GetValue(dazzle.Percent), Entity.GetMaxHealth(hero)) then
                     local EnemyHeroes = Entity.GetHeroesInRadius(hero, 1100, Enum.TeamType.TEAM_ENEMY)
-                    if #EnemyHeroes >= 1 then
+                    if #EnemyHeroes >= 1 and Menu.IsEnabled(dazzle.NearlyGraveUse) then
                         return hero
                     end
                 end
@@ -123,20 +126,20 @@ function dazzle.OnUpdate()
         GameTime = GameRules.GetGameTime()
         if Timer > GameTime then return end
         Timer = GameTime + 0.15
-        
+
         UpdateInfo()
         GetShallowGraveRadius()
-
-        if not Entity.IsAlive(myHero) 
-        or NPC.HasState(myHero, Enum.ModifierState.MODIFIER_STATE_SILENCED)
-        or NPC.HasState(myHero, Enum.ModifierState.MODIFIER_STATE_MUTED)
-        or NPC.HasState(myHero, Enum.ModifierState.MODIFIER_STATE_STUNNED)
-        or NPC.HasState(myHero, Enum.ModifierState.MODIFIER_STATE_HEXED)
-        or NPC.HasState(myHero, Enum.ModifierState.MODIFIER_STATE_NIGHTMARED)
-        or NPC.HasModifier(myHero, 'modifier_obsidian_destroyer_astral_imprisonment_prison')
-        or NPC.HasModifier(myHero, 'modifier_teleporting')
-        or NPC.HasModifier(myHero, 'modifier_pudge_swallow_hide')
-        or NPC.HasModifier(myHero, 'modifier_axe_berserkers_call')
+        
+        if not Entity.IsAlive(MyHero) 
+        or NPC.HasState(MyHero, Enum.ModifierState.MODIFIER_STATE_SILENCED)
+        or NPC.HasState(MyHero, Enum.ModifierState.MODIFIER_STATE_MUTED)
+        or NPC.HasState(MyHero, Enum.ModifierState.MODIFIER_STATE_STUNNED)
+        or NPC.HasState(MyHero, Enum.ModifierState.MODIFIER_STATE_HEXED)
+        or NPC.HasState(MyHero, Enum.ModifierState.MODIFIER_STATE_NIGHTMARED)
+        or NPC.HasModifier(MyHero, 'modifier_obsidian_destroyer_astral_imprisonment_prison')
+        or NPC.HasModifier(MyHero, 'modifier_teleporting')
+        or NPC.HasModifier(MyHero, 'modifier_pudge_swallow_hide')
+        or NPC.HasModifier(MyHero, 'modifier_axe_berserkers_call')
         then return end
 
         if not Entity.IsAlive(GetTheRightHero()) 
@@ -157,15 +160,15 @@ function dazzle.OnUpdate()
         or NPC.HasModifier(GetTheRightHero(), 'modifier_visage_summon_familiars_stone_form_buff')
         then return end
 
-        if Ability.IsReady(grave) then
+        if Ability.IsReady(ShallowGrave) then
             if Menu.IsEnabled(dazzle.GraveInPromise) then
                 if (NPC.HasModifier(GetTheRightHero(), 'modifier_oracle_false_promise_timer') and GetModifiersDieTimeByName('modifier_oracle_false_promise_timer') < 1) then
-                    Ability.CastTarget(grave, GetTheRightHero())
+                    Ability.CastTarget(ShallowGrave, GetTheRightHero())
                 elseif not NPC.HasModifier(GetTheRightHero(), 'modifier_oracle_false_promise_timer') then
-                    Ability.CastTarget(grave, GetTheRightHero())
+                    Ability.CastTarget(ShallowGrave, GetTheRightHero())
                 end
             else
-                Ability.CastTarget(grave, GetTheRightHero())
+                Ability.CastTarget(ShallowGrave, GetTheRightHero())
             end
         end
     end
