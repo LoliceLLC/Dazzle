@@ -18,10 +18,34 @@ HeroesCore.AddOptionIcon(dazzle.Percent, '~/MenuIcons/bar_ally.png')
 -- Use Grave if enemy is nearly
 dazzle.NearlyGraveUse = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Use Grave if enemy is nearly', true)
 HeroesCore.AddOptionIcon(dazzle.NearlyGraveUse, '~/MenuIcons/horizontal.png')
+-- Use Grave in dangerous skills
+dazzle.GraveInDangerous = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Grave in dangerous skills', true)
+Menu.AddOptionTip(dazzle.GraveInDangerous, 'Supported skills: FingerOfDeath, LagunaBlade, SonicWave')
+HeroesCore.AddOptionIcon(dazzle.GraveInDangerous, '~/MenuIcons/skull.png')
 -- Auto Grave in FalsePromise
 dazzle.GraveInPromise = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Auto grave in FalsePromise', false)
 Menu.AddOptionTip(dazzle.GraveInPromise, 'Automatically cast FalsePromise at the end.')
 HeroesCore.AddOptionIcon(dazzle.GraveInPromise, 'panorama/images/spellicons/oracle_false_promise_png.vtex_c')
+
+-- Heal section
+dazzle.HealBind = HeroesCore.AddKeyOption({ 'Hero Specific', 'Intelligence',  'Dazzle' , 'Healing' }, 'Heal target teammates', Enum.ButtonCode.KEY_NONE)
+HeroesCore.AddOptionIcon(dazzle.HealBind, '~/MenuIcons/status.png')
+dazzle.AbilitiesForHeal = HeroesCore.AddOptionMultiSelect({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Healing' }, 'Abilities for heal:', 
+{
+    { 'shadow_wave', 'panorama/images/spellicons/dazzle_shadow_wave_png.vtex_c', true },
+    { 'bad_juju', 'panorama/images/spellicons/dazzle_bad_juju_png.vtex_c', true }
+}, false)
+HeroesCore.AddOptionIcon(dazzle.AbilitiesForHeal, '~/MenuIcons/dots.png')
+dazzle.ItemsForHeal = HeroesCore.AddOptionMultiSelect({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Healing' }, 'Items for heal:', 
+{
+    { 'item_holy_locket', 'panorama/images/items/holy_locket_png.vtex_c', true },
+    { 'item_mekansm', 'panorama/images/items/mekansm_png.vtex_c', true },
+    { 'item_guardian_greaves', 'panorama/images/items/guardian_greaves_png.vtex_c', true },
+    { 'item_urn_of_shadows', 'panorama/images/items/urn_of_shadows_png.vtex_c', false },
+    { 'item_spirit_vessel', 'panorama/images/items/spirit_vessel_png.vtex_c', false }
+}, false)
+HeroesCore.AddOptionIcon(dazzle.ItemsForHeal, '~/MenuIcons/dots.png')
+HeroesCore.AddMenuIcon({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Healing' }, 'panorama/images/spellicons/dazzle_shadow_wave_png.vtex_c')
 
 -- Visual section
 dazzle.Panel = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle' , 'Visual' }, 'Panel', false)
@@ -78,7 +102,10 @@ function dazzle.GetTeammates()
 end
 
 local function UpdateInfo()
+    MyMana = NPC.GetMana(MyHero)
     ShallowGrave = NPC.GetAbility(MyHero, 'dazzle_shallow_grave')
+    ShadowWave = NPC.GetAbility(MyHero, 'dazzle_shadow_wave')
+    BadJuju = NPC.GetAbility(MyHero, 'dazzle_bad_juju')
 end
 
 local function GetPercent(percent,maxvalue)
@@ -88,30 +115,95 @@ local function GetPercent(percent,maxvalue)
     return 696969696969691337 -- erorhendler))))
 end
 
-local function GetShallowGraveRadius()
+local function GetRadius()
     GraveRange = Ability.GetCastRange(NPC.GetAbility(MyHero, 'dazzle_shallow_grave'))
+    ShadowRange = Ability.GetCastRange(NPC.GetAbility(MyHero, 'dazzle_shadow_wave'))
+    BadRange = Ability.GetCastRange(NPC.GetAbility(MyHero, 'dazzle_bad_juju'))
 end
 
-local function GetTheRightHero()
-    for i, hero in pairs(Heroes.InRadius(Entity.GetOrigin(MyHero), GraveRange, Entity.GetTeamNum(MyTeam), Enum.TeamType.TEAM_FRIEND)) do
-        if HeroSettings[hero] then 
-            if HeroSettings[hero].enabled then
-                if Entity.GetHealth(hero) < GetPercent(Menu.GetValue(dazzle.Percent), Entity.GetMaxHealth(hero)) then
-                    local EnemyHeroes = Entity.GetHeroesInRadius(hero, 1100, Enum.TeamType.TEAM_ENEMY)
-                    if #EnemyHeroes >= 1 and Menu.IsEnabled(dazzle.NearlyGraveUse) then
-                        return hero
+local function GetTheRightHero() 
+    if (Menu.IsEnabled(dazzle.Enable)) then
+        for _, FriendlyHeroes in pairs(Heroes.InRadius(Entity.GetOrigin(MyHero), GraveRange, Entity.GetTeamNum(MyTeam), Enum.TeamType.TEAM_FRIEND)) do
+            if (HeroSettings[FriendlyHeroes]) then 
+                if (HeroSettings[FriendlyHeroes].enabled) then
+                    -- Default auto Grave return FriendlyHeroes
+                    if Entity.GetHealth(FriendlyHeroes) < GetPercent(Menu.GetValue(dazzle.Percent), Entity.GetMaxHealth(FriendlyHeroes)) then
+                        local EnemyHeroes = Entity.GetHeroesInRadius(FriendlyHeroes, 1100, Enum.TeamType.TEAM_ENEMY)
+                        if (#EnemyHeroes >= 1 and Menu.IsEnabled(dazzle.NearlyGraveUse)) then
+                            return FriendlyHeroes
+                        end
+                    end
+                    -- If dangerous skills ( i don't know if this approach is optimized))) )
+                    if (Menu.IsEnabled(dazzle.GraveInDangerous)) then
+                        for _, Heroes in pairs(Heroes.GetAll()) do
+                        if (NPC.GetUnitName(Heroes) == 'npc_dota_hero_queenofpain' and Ability.IsInAbilityPhase(NPC.GetAbilityByIndex(Heroes, 5))
+                            and NPC.IsEntityInRange(Heroes, FriendlyHeroes, Ability.GetCastRange(NPC.GetAbilityByIndex(Heroes, 5)))) then
+
+                                local SW = 0
+                                local SWD = 0
+
+                                if (NPC.HasModifier(Heroes, 'modifier_item_ultimate_scepter') or NPC.HasModifier(Heroes, 'modifier_item_ultimate_scepter_consumed') or NPC.HasModifier(Heroes, 'modifier_item_ultimate_scepter_consumed_alchemist')) then
+                                    SW = Ability.GetLevelSpecialValueFor(NPC.GetAbilityByIndex(Heroes, 5), 'damage_scepter')
+                                    SWD = SW + (NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE) + NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE_UNIQUE))
+                                else
+                                    SW = Ability.GetLevelSpecialValueFor(NPC.GetAbilityByIndex(Heroes, 5), 'damage')
+                                    SWD = SW + (NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE) + NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE_UNIQUE))
+                                end
+
+                                if (Ability.GetLevel(NPC.GetAbility(Heroes, 'special_bonus_unique_queen_of_pain_2')) > 0) then SWD = SWD + 120 end
+
+                                if (SWD + 150 >= Entity.GetHealth(FriendlyHeroes)) then return FriendlyHeroes end
+
+                            elseif (NPC.GetUnitName(Heroes) == 'npc_dota_hero_lion'
+                            and Ability.IsInAbilityPhase(NPC.GetAbilityByIndex(Heroes, 5)) or Ability.IsChannelling(NPC.GetAbilityByIndex(Heroes, 5))
+                            and NPC.IsEntityInRange(Heroes, FriendlyHeroes, Ability.GetCastRange(NPC.GetAbilityByIndex(Heroes, 5)))) then
+
+                                local FD = Ability.GetLevelSpecialValueFor(NPC.GetAbilityByIndex(Heroes, 5), 'damage')
+                                local FLD = 0
+
+                                local AMP = FD * (NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE) + NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE_UNIQUE) * 0.01)
+
+                                if (NPC.HasModifier(Heroes, 'modifier_item_ultimate_scepter') or NPC.HasModifier(Heroes, 'modifier_item_ultimate_scepter_consumed') or NPC.HasModifier(Heroes, 'modifier_item_ultimate_scepter_consumed_alchemist')) then
+                                    local FLA = Ability.GetLevelSpecialValueFor(NPC.GetAbilityByIndex(Heroes, 5), 'damage_scepter')
+                                    FD = FLA + AMP
+                                    FLD = FD * NPC.GetMagicalArmorDamageMultiplier(FriendlyHeroes)
+                                else
+                                    FD = FD + AMP
+                                    FLD = FD * NPC.GetMagicalArmorDamageMultiplier(FriendlyHeroes)
+                                end
+
+                                if FLD + 150 >= Entity.GetHealth(FriendlyHeroes) then return FriendlyHeroes end
+
+                            elseif (NPC.GetUnitName(Heroes) == 'npc_dota_hero_lina'
+                            and Ability.IsInAbilityPhase(NPC.GetAbilityByIndex(Heroes, 5)) or Ability.IsChannelling(NPC.GetAbilityByIndex(Heroes, 5))
+                            and NPC.IsEntityInRange(FriendlyHeroes, Heroes, Ability.GetCastRange(NPC.GetAbilityByIndex(Heroes, 5)))) then
+
+                                local LB = Ability.GetLevelSpecialValueFor(NPC.GetAbilityByIndex(Heroes, 5), 'damage')
+                                local LBAMP = LB * (NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE) + NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE_UNIQUE) * 0.01)
+                                local LLD = 0
+
+                                if (NPC.HasModifier(Heroes, 'modifier_item_ultimate_scepter') or NPC.HasModifier(Heroes, 'modifier_item_ultimate_scepter_consumed') or NPC.HasModifier(Heroes, 'modifier_item_ultimate_scepter_consumed_alchemist')) then
+                                    LLD = LB + LBAMP
+                                else
+                                    LB = LB + LBAMP
+                                    LLD = LB * NPC.GetMagicalArmorDamageMultiplier(FriendlyHeroes)
+                                end
+
+                                if (LLD + 150 >= Entity.GetHealth(FriendlyHeroes)) then return FriendlyHeroes end
+                            end
+                        end
                     end
                 end
             end
         end
+        return false
     end
-    return false
 end
 
-local function GetModifiersDieTimeByName(name)
-    modifiers = NPC.GetModifiers(GetTheRightHero())
+local function GetModifiersDieTimeByName(hero, name)
+    modifiers = NPC.GetModifiers(hero)
     for _, modifs in pairs(modifiers) do
-        if Modifier.GetName(modifs) == name then
+        if (Modifier.GetName(modifs) == name) then
             DieTime = math.floor(((Modifier.GetDieTime(modifs) - GameRules.GetGameTime()) * 10^1) + 0.5) / (10^1)
             return DieTime
         end
@@ -120,7 +212,11 @@ end
 
 function dazzle.OnUpdate()
 
-    if Menu.IsEnabled(dazzle.Enable) then
+    if (Menu.IsEnabled(dazzle.Enable)) then
+
+        if MyHero == nil then return end
+
+        if not IsDazzle then return end
 
         -- Amazing timer
         GameTime = GameRules.GetGameTime()
@@ -128,7 +224,7 @@ function dazzle.OnUpdate()
         Timer = GameTime + 0.15
 
         UpdateInfo()
-        GetShallowGraveRadius()
+        GetRadius()
         
         if not Entity.IsAlive(MyHero) 
         or NPC.HasState(MyHero, Enum.ModifierState.MODIFIER_STATE_SILENCED)
@@ -142,33 +238,74 @@ function dazzle.OnUpdate()
         or NPC.HasModifier(MyHero, 'modifier_axe_berserkers_call')
         then return end
 
-        if not Entity.IsAlive(GetTheRightHero()) 
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_pudge_swallow_hide')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_obsidian_destroyer_astral_imprisonment_prison')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_puck_phase_shift')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_life_stealer_infest')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_juggernaut_omnislash')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_shadow_demon_disruption')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_eul_cyclone') or NPC.HasModifier(GetTheRightHero(), 'modifier_wind_waker')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_item_book_of_shadows_buff')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_dark_willow_shadow_realm_buff')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_void_spirit_dissimilate_phase')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_earth_spirit_stone_thinker')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_phoenix_supernova_hiding')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_snapfire_gobble_up_creep')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_invoker_tornado')
-        or NPC.HasModifier(GetTheRightHero(), 'modifier_visage_summon_familiars_stone_form_buff')
-        then return end
+        FriendlyTarget = HeroesCore.GetTarget(MyTeam, Enum.TeamType.TEAM_FRIEND)
 
-        if Ability.IsReady(ShallowGrave) then
-            if Menu.IsEnabled(dazzle.GraveInPromise) then
-                if (NPC.HasModifier(GetTheRightHero(), 'modifier_oracle_false_promise_timer') and GetModifiersDieTimeByName('modifier_oracle_false_promise_timer') < 1) then
-                    Ability.CastTarget(ShallowGrave, GetTheRightHero())
-                elseif not NPC.HasModifier(GetTheRightHero(), 'modifier_oracle_false_promise_timer') then
-                    Ability.CastTarget(ShallowGrave, GetTheRightHero())
+        if (Menu.IsKeyDown(dazzle.HealBind)) then
+            for i, Items in pairs(Menu.GetItems(dazzle.ItemsForHeal)) do
+                if (Menu.IsSelected(dazzle.ItemsForHeal, Items)) then
+                    if (Ability.IsCastable(NPC.GetItem(MyHero, tostring(Items)), MyMana)) then
+                        if (NPC.IsEntityInRange(FriendlyTarget, MyHero, 1100)) then
+                            if (Items == 'item_mekansm' or Items == 'item_guardian_greaves') then
+                                Ability.CastNoTarget(NPC.GetItem(MyHero, tostring(Items)))
+                            elseif (Items == 'item_urn_of_shadows' or Items == 'item_spirit_vessel') then
+                                if (Item.GetCurrentCharges(NPC.GetItem(MyHero, tostring(Items))) > 0) then
+                                    if not (NPC.HasModifier(FriendlyTarget, 'modifier_item_spirit_vessel_heal') or NPC.HasModifier(FriendlyTarget, 'modifier_item_urn_heal')) then
+                                        Ability.CastTarget(NPC.GetItem(MyHero, tostring(Items)), FriendlyTarget)
+                                    end
+                                end
+                            end
+                        end
+                    end
                 end
-            else
-                Ability.CastTarget(ShallowGrave, GetTheRightHero())
+            end
+
+            local CastStep = 1
+
+            if (CastStep == 1) then
+                if (Ability.IsCastable(ShadowWave, MyMana) and Menu.IsSelected(dazzle.AbilitiesForHeal, 'shadow_wave')) then
+                    Ability.CastTarget(ShadowWave, FriendlyTarget)
+                else
+                    CastStep = 2
+                end
+            end
+
+            if (CastStep == 2) then
+                if (Ability.IsCastable(BadJuju, MyMana) and Menu.IsSelected(dazzle.AbilitiesForHeal, 'bad_juju') and NPC.IsEntityInRange(FriendlyTarget, MyHero, BadRange)) then
+                    Ability.CastNoTarget(BadJuju)
+                end 
+            end
+        end
+
+        local RightHero = GetTheRightHero()
+
+        if not Entity.IsAlive(RightHero) 
+        or NPC.HasModifier(RightHero, 'modifier_pudge_swallow_hide')
+        or NPC.HasModifier(RightHero, 'modifier_obsidian_destroyer_astral_imprisonment_prison')
+        or NPC.HasModifier(RightHero, 'modifier_puck_phase_shift')
+        or NPC.HasModifier(RightHero, 'modifier_life_stealer_infest')
+        or NPC.HasModifier(RightHero, 'modifier_juggernaut_omnislash')
+        or NPC.HasModifier(RightHero, 'modifier_shadow_demon_disruption')
+        or NPC.HasModifier(RightHero, 'modifier_eul_cyclone') or NPC.HasModifier(RightHero, 'modifier_wind_waker')
+        or NPC.HasModifier(RightHero, 'modifier_item_book_of_shadows_buff')
+        or NPC.HasModifier(RightHero, 'modifier_dark_willow_shadow_realm_buff')
+        or NPC.HasModifier(RightHero, 'modifier_void_spirit_dissimilate_phase')
+        or NPC.HasModifier(RightHero, 'modifier_earth_spirit_stone_thinker')
+        or NPC.HasModifier(RightHero, 'modifier_phoenix_supernova_hiding')
+        or NPC.HasModifier(RightHero, 'modifier_snapfire_gobble_up_creep')
+        or NPC.HasModifier(RightHero, 'modifier_invoker_tornado')
+        or NPC.HasModifier(RightHero, 'modifier_visage_summon_familiars_stone_form_buff')
+        then return end
+        if (Ability.IsCastable(ShallowGrave, MyMana)) then
+            if not NPC.HasModifier(RightHero, 'modifier_dazzle_shallow_grave') then
+                if (Menu.IsEnabled(dazzle.GraveInPromise)) then
+                    if (NPC.HasModifier(RightHero, 'modifier_oracle_false_promise_timer') and GetModifiersDieTimeByName(RightHero, 'modifier_oracle_false_promise_timer') < 1) then
+                        Ability.CastTarget(ShallowGrave, RightHero)
+                    elseif (not NPC.HasModifier(RightHero, 'modifier_oracle_false_promise_timer')) then
+                        Ability.CastTarget(ShallowGrave, RightHero)
+                    end
+                else
+                    Ability.CastTarget(ShallowGrave, RightHero)
+                end
             end
         end
     end
@@ -210,7 +347,7 @@ function dazzle.ScreenClamp(x, y)
 end
 
 function dazzle.MovingManager()
-    if UI.IsMoving and Menu.IsKeyDown(dazzle.MovingButton) and Input.IsKeyDown(Enum.ButtonCode.KEY_MOUSE1) then
+    if (UI.IsMoving and Menu.IsKeyDown(dazzle.MovingButton) and Input.IsKeyDown(Enum.ButtonCode.KEY_MOUSE1)) then
         local w, h = Input.GetCursorPos()
         UI.x = UI.x - (UI.MoveW - w)
         UI.y = UI.y - (UI.MoveH - h)
@@ -247,17 +384,20 @@ function dazzle.DrawUI()
 
     for i, hero in pairs(heroes) do
 
-        if not HeroSettings[hero] then
+        if (not HeroSettings[hero]) then
             HeroSettings[hero] = {
                 enabled = true 
             }
         end
 
+        Renderer.SetDrawColor(255, 255, 255, 255)
         Renderer.DrawImage(HeroBackground, x, UI.y + 9, UI.HeroBgW * Multiplier, UI.HeroBgH * Multiplier)
 
-        if HeroSettings[hero].enabled then
+        if (HeroSettings[hero].enabled) then
+            Renderer.SetDrawColor(255, 255, 255, 255)
             Renderer.DrawImage(ToggleOn, x - 3, UI.y + 6, UI.ToggleW * Multiplier, UI.ToggleH * Multiplier)
         else
+            Renderer.SetDrawColor(255, 255, 255, 255)
             Renderer.DrawImage(ToggleOff, x - 3, UI.y + 6, UI.ToggleW * Multiplier, UI.ToggleH * Multiplier)
         end
         
@@ -267,11 +407,17 @@ function dazzle.DrawUI()
             end
         end
 
-        if not HeroImage[NPC.GetUnitName(hero)] then
+        if (not HeroImage[NPC.GetUnitName(hero)]) then
             HeroImage[NPC.GetUnitName(hero)] = Renderer.LoadImage('~/heroes_circle/' .. string.gsub(NPC.GetUnitName(hero), 'npc_dota_hero_', '') .. '.png')
         end
 
-        Renderer.DrawImage(HeroImage[NPC.GetUnitName(hero)], x + 3, UI.y + 12, UI.HeroW * Multiplier, UI.HeroH * Multiplier)
+        if (HeroSettings[hero].enabled) then
+            Renderer.SetDrawColor(255, 255, 255, 255)
+            Renderer.DrawImage(HeroImage[NPC.GetUnitName(hero)], x + 3, UI.y + 12, UI.HeroW * Multiplier, UI.HeroH * Multiplier)
+        else
+            Renderer.SetDrawColor(100, 100, 100, 255)
+            Renderer.DrawImage(HeroImage[NPC.GetUnitName(hero)], x + 3, UI.y + 12, UI.HeroW * Multiplier, UI.HeroH * Multiplier)
+        end
 
         x = x + 36 + 9
     end
@@ -283,7 +429,7 @@ function dazzle.DrawUI()
 end
 
 function dazzle.OnDraw()
-    if (Engine.IsInGame() and Menu.IsEnabled(dazzle.Enable) and Menu.IsEnabled(dazzle.Panel)) and IsDazzle then
+    if ((Engine.IsInGame() and Menu.IsEnabled(dazzle.Enable) and Menu.IsEnabled(dazzle.Panel)) and IsDazzle) then
         dazzle.MovingManager()
         dazzle.DrawUI()
     end
