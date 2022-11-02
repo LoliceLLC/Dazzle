@@ -397,16 +397,16 @@ function dazzle.DrawUI()
     Renderer.SetDrawColor(255, 255, 255, 255)
     Renderer.DrawImage(MainBackground, x, UI.y, UI.Width * Multiplier, UI.Height * Multiplier)
 
-    local heroes = dazzle.GetTeammates()
+    local Heroes = dazzle.GetTeammates()
 
     x = x + (9 * Multiplier)
 
     local HeroImage = {}
 
-    for _, Hero in pairs(heroes) do
+    for _, Hero in pairs(Heroes) do
 
-        if (not HeroSettings[hero]) then
-            HeroSettings[hero] = {
+        if (not HeroSettings[Hero]) then
+            HeroSettings[Hero] = {
                 enabled = true 
             }
         end
