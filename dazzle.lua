@@ -63,7 +63,7 @@ dazzle.LinkenBreakerEnable = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intell
 HeroesCore.AddMenuIcon({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Combo', 'Linken breaker' }, '~/MenuIcons/dota/linken.png')
 HeroesCore.AddOptionIcon(dazzle.LinkenBreakerEnable, '~/MenuIcons/status.png')
 -- Items for linken breaker
-dazzle.ItemsForLinkenBreaker = HeroesCore.AddOptionMultiSelect({'Hero Specific', 'Intelligence', 'Jakiro', 'Combo', 'Linken breaker'}, 'Items:', 
+dazzle.ItemsForLinkenBreaker = HeroesCore.AddOptionMultiSelect({'Hero Specific', 'Intelligence', 'Dazzle', 'Combo', 'Linken breaker'}, 'Items:', 
 {
     { 'item_heavens_halberd', 'panorama/images/items/heavens_halberd_png.vtex_c', true },
     { 'item_wind_waker', 'panorama/images/items/wind_waker_png.vtex_c', true },
