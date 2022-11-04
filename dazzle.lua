@@ -627,8 +627,8 @@ local UI = {
     HeroBgH = 36,
     HeroW = 30,
     HeroH = 30,
-    ToggleW = 42,
-    ToggleH = 42,
+    ToggleW = 48,
+    ToggleH = 48,
     MoveW = 0,
     MoveH = 0,
     IsMoving = false,
@@ -673,9 +673,7 @@ function dazzle.MovingManager()
     end
 end
 
--- Please fix renderer functions and make antialiasing 🙏🙏🙏🙏
-local MainBackground = Renderer.LoadImage('~/dazzle/background.png')
-local HeroBackground =  Renderer.LoadImage('~/dazzle/bg.png')
+-- Please fix renderer functions and make antialiasing 🙏🙏🙏🙏 | upd 11/4/2022: Valve thanks)0)0))
 local ToggleOn = Renderer.LoadImage('~/dazzle/toggle_on.png')
 local ToggleOff = Renderer.LoadImage('~/dazzle/toggle_off.png')
 
@@ -684,8 +682,7 @@ function dazzle.DrawUI()
     UI.x, UI.y = dazzle.ScreenClamp(UI.x, UI.y)
     local x = UI.x
 
-    Renderer.SetDrawColor(255, 255, 255, 255)
-    Renderer.DrawImage(MainBackground, x, UI.y, UI.Width * Multiplier, UI.Height * Multiplier)
+    Renderer.DrawFilledRoundedRect(x, UI.y, UI.Width * Multiplier, UI.Height * Multiplier, 10, 23, 30, 37)
 
     local Heroes = dazzle.GetTeammates()
 
@@ -701,15 +698,14 @@ function dazzle.DrawUI()
             }
         end
 
-        Renderer.SetDrawColor(255, 255, 255, 255)
-        Renderer.DrawImage(HeroBackground, x, UI.y + 9, UI.HeroBgW * Multiplier, UI.HeroBgH * Multiplier)
+        Renderer.DrawFilledRoundedRect(x, UI.y + 9, UI.HeroBgW * Multiplier, UI.HeroBgH * Multiplier, 8, 31, 40, 52)
 
         if (HeroSettings[Hero].enabled) then
             Renderer.SetDrawColor(255, 255, 255, 255)
-            Renderer.DrawImage(ToggleOn, x - 3, UI.y + 6, UI.ToggleW * Multiplier, UI.ToggleH * Multiplier)
+            Renderer.DrawImage(ToggleOn, x - 6, UI.y + 3, UI.ToggleW * Multiplier, UI.ToggleH * Multiplier)
         else
             Renderer.SetDrawColor(255, 255, 255, 255)
-            Renderer.DrawImage(ToggleOff, x - 3, UI.y + 6, UI.ToggleW * Multiplier, UI.ToggleH * Multiplier)
+            Renderer.DrawImage(ToggleOff, x - 6, UI.y + 3, UI.ToggleW * Multiplier, UI.ToggleH * Multiplier)
         end
         
         if (Input.IsCursorInRect(x, UI.y, UI.HeroBgW * Multiplier, UI.HeroBgH * Multiplier)) then
