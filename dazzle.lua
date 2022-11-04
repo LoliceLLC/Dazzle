@@ -61,7 +61,7 @@ Menu.AddOptionTip(dazzle.ComboInMirrorShieldEnable, 'If you are immune to magic,
 -- Linken breaker
 dazzle.LinkenBreakerEnable = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence', 'Dazzle',  'Combo', 'Linken breaker' }, 'Enable', false)
 HeroesCore.AddMenuIcon({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Combo', 'Linken breaker' }, '~/MenuIcons/dota/linken.png')
-HeroesCore.AddOptionIcon(dazzle.LinkenBreakerEnable, '~/MenuIcons/Enable/enable_check_boxed.png')
+HeroesCore.AddOptionIcon(dazzle.LinkenBreakerEnable, '~/MenuIcons/status.png')
 -- Items for linken breaker
 dazzle.ItemsForLinkenBreaker = HeroesCore.AddOptionMultiSelect({'Hero Specific', 'Intelligence', 'Dazzle', 'Combo', 'Linken breaker'}, 'Items:', 
 {
@@ -81,6 +81,9 @@ HeroesCore.AddOptionIcon(dazzle.ItemsForLinkenBreaker, '~/MenuIcons/dots.png')
 Menu.AddOptionTip(dazzle.ItemsForLinkenBreaker, 'You can move items on LMB to change priority!')
 
 -- Auto Grave section
+dazzle.AutoSaveEnable = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle' , 'Auto Shallow Grave' }, 'Enable', false)
+HeroesCore.AddOptionIcon(dazzle.AutoSaveEnable, '~/MenuIcons/Enable/enable_check_boxed.png')
+-- Percent of max HP
 dazzle.Percent = HeroesCore.AddOptionSlider({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Percent of max HP', 1, 100, 5)
 HeroesCore.AddMenuIcon({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Auto Shallow Grave' }, 'panorama/images/spellicons/dazzle_shallow_grave_png.vtex_c')
 HeroesCore.AddOptionIcon(dazzle.Percent, '~/MenuIcons/bar_ally.png')
@@ -348,7 +351,11 @@ local function GetTheRightHero()
                 if (HeroSettings[FriendlyHeroes].enabled) then
                     if (Entity.GetHealth(FriendlyHeroes) < GetPercent(Menu.GetValue(dazzle.Percent), Entity.GetMaxHealth(FriendlyHeroes))) then
                         local EnemyHeroes = Entity.GetHeroesInRadius(FriendlyHeroes, 1100, Enum.TeamType.TEAM_ENEMY)
-                        if (#EnemyHeroes >= 1 and Menu.IsEnabled(dazzle.NearlyGraveUse)) then
+                        if (Menu.IsEnabled(dazzle.NearlyGraveUse)) then
+                            if (#EnemyHeroes >= 1) then
+                                return FriendlyHeroes
+                            end
+                        else
                             return FriendlyHeroes
                         end
                     end
@@ -394,17 +401,19 @@ function dazzle.OnUpdate()
         local RightHero = GetTheRightHero()
 
         -- Auto Grave
-        if (Ability.IsCastable(ShallowGrave, MyMana)) then
-            -- Return if hero not available to cast Grave
-            if (NotAvailableModifs(RightHero)) then
-                if (Menu.IsEnabled(dazzle.GraveInPromise)) then
-                    if (NPC.HasModifier(RightHero, 'modifier_oracle_false_promise_timer') and GetModifiersDieTimeByName(RightHero, 'modifier_oracle_false_promise_timer') < 1) then
-                        Ability.CastTarget(ShallowGrave, RightHero)
-                    elseif (not NPC.HasModifier(RightHero, 'modifier_oracle_false_promise_timer')) then
+        if (Menu.IsEnabled(dazzle.AutoSaveEnable)) then
+            if (Ability.IsCastable(ShallowGrave, MyMana)) then
+                -- Return if hero not available to cast Grave
+                if (not NotAvailableModifs(RightHero)) then
+                    if (Menu.IsEnabled(dazzle.GraveInPromise)) then
+                        if (NPC.HasModifier(RightHero, 'modifier_oracle_false_promise_timer') and GetModifiersDieTimeByName(RightHero, 'modifier_oracle_false_promise_timer') < 1) then
+                            Ability.CastTarget(ShallowGrave, RightHero)
+                        elseif (not NPC.HasModifier(RightHero, 'modifier_oracle_false_promise_timer')) then
+                            Ability.CastTarget(ShallowGrave, RightHero)
+                        end
+                    else
                         Ability.CastTarget(ShallowGrave, RightHero)
                     end
-                else
-                    Ability.CastTarget(ShallowGrave, RightHero)
                 end
             end
         end
