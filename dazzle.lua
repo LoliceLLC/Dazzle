@@ -411,8 +411,6 @@ function dazzle.OnUpdate()
                         elseif (not NPC.HasModifier(RightHero, 'modifier_oracle_false_promise_timer')) then
                             Ability.CastTarget(ShallowGrave, RightHero)
                         end
-                    else
-                        Ability.CastTarget(ShallowGrave, RightHero)
                     end
                 end
             end
