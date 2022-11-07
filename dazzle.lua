@@ -3,7 +3,7 @@ local dazzle = {}
 -- Hero detect for HeroesCore
 local CoreHero = Heroes.GetLocal()
 local IsDazzle = false
-if CoreHero then
+if (CoreHero) then
     IsDazzle = NPC.GetUnitName(CoreHero) == 'npc_dota_hero_dazzle'
 end
 HeroesCore.UseCurrentPath(IsDazzle)
@@ -191,11 +191,17 @@ function dazzle.GetTeammates()
 end
 
 local function UpdateInfo()
+    -- My mana
     MyMana = NPC.GetMana(MyHero)
+    -- Hero skills
     PoisonTouch = NPC.GetAbility(MyHero, 'dazzle_poison_touch')
     ShallowGrave = NPC.GetAbility(MyHero, 'dazzle_shallow_grave')
     ShadowWave = NPC.GetAbility(MyHero, 'dazzle_shadow_wave')
     BadJuju = NPC.GetAbility(MyHero, 'dazzle_bad_juju')
+    -- Skills radius
+    GraveRange = Ability.GetCastRange(NPC.GetAbility(MyHero, 'dazzle_shallow_grave'))
+    ShadowRange = Ability.GetCastRange(NPC.GetAbility(MyHero, 'dazzle_shadow_wave'))
+    BadRange = Ability.GetCastRange(NPC.GetAbility(MyHero, 'dazzle_bad_juju'))
 end
 
 local function GetPercent(Percent,MaxValue)
@@ -203,12 +209,6 @@ local function GetPercent(Percent,MaxValue)
         return (MaxValue * Percent) / 100
     end
     return 696969696969691337 -- erorhendler))))
-end
-
-local function GetRadius()
-    GraveRange = Ability.GetCastRange(NPC.GetAbility(MyHero, 'dazzle_shallow_grave'))
-    ShadowRange = Ability.GetCastRange(NPC.GetAbility(MyHero, 'dazzle_shadow_wave'))
-    BadRange = Ability.GetCastRange(NPC.GetAbility(MyHero, 'dazzle_bad_juju'))
 end
 
 local function GetModifiersDieTimeByName(Hero, Name)
@@ -301,8 +301,7 @@ local function BestPosition(UnitsAround, Radius, PredictTime)
 end
 
 local function IsGhosted(Hero)
-    if ((not NPC.HasModifier(Hero, 'modifier_item_ethereal_blade_ethereal'))
-    and (not NPC.HasModifier(Hero, 'modifier_ghost_state'))) then
+    if ((not NPC.HasModifier(Hero, 'modifier_item_ethereal_blade_ethereal')) and (not NPC.HasModifier(Hero, 'modifier_ghost_state'))) then
         return false
     end
     return true
@@ -383,7 +382,6 @@ function dazzle.OnUpdate()
         Timer = GameTime + 0.15
 
         UpdateInfo()
-        GetRadius()
         
         -- Return end if my hero stuned etc...
         if not Entity.IsAlive(MyHero) 
@@ -419,6 +417,7 @@ function dazzle.OnUpdate()
         -- Target healing
         local FriendlyTarget = HeroesCore.GetTarget(MyTeam, Enum.TeamType.TEAM_FRIEND)
 
+        -- Healing combo
         if (Menu.IsKeyDown(dazzle.HealBind)) then
             -- Items
             for i, Items in ipairs(Menu.GetItems(dazzle.ItemsForHeal)) do
@@ -439,6 +438,7 @@ function dazzle.OnUpdate()
                 end
             end
 
+            -- Stepping
             local HealingCastStep = 1
 
             -- Cast ShadowWave
@@ -518,6 +518,7 @@ function dazzle.OnUpdate()
         -- Combo
         if (Menu.IsKeyDown(dazzle.ComboBind)) then
 
+            -- Cant attack o_O
             local CantAttack = false
 
             -- MirrorSheild check
@@ -587,7 +588,7 @@ function dazzle.OnUpdate()
 
             -- Cast ShadowWave if npcs in radius
             if (ComboCastStep == 2) then
-                for i, HealTarget in pairs(NPCs.InRadius(Entity.GetAbsOrigin(EnemyTarget), 175, MyTeam, Enum.TeamType.TEAM_FRIEND)) do
+                for _, HealTarget in pairs(NPCs.InRadius(Entity.GetAbsOrigin(EnemyTarget), 175, MyTeam, Enum.TeamType.TEAM_FRIEND)) do
                     if (Ability.IsCastable(ShadowWave, MyMana) and Menu.IsSelected(dazzle.AbilitiesForCombo, 'poison_touch')) then
                         Ability.CastTarget(ShadowWave, HealTarget)
                     end
