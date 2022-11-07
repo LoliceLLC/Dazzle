@@ -88,7 +88,7 @@ dazzle.Percent = HeroesCore.AddOptionSlider({ 'Hero Specific', 'Intelligence',  
 HeroesCore.AddMenuIcon({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Auto Shallow Grave' }, 'panorama/images/spellicons/dazzle_shallow_grave_png.vtex_c')
 HeroesCore.AddOptionIcon(dazzle.Percent, '~/MenuIcons/bar_ally.png')
 -- Use Grave if enemy is nearly
-dazzle.NearlyGraveUse = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Use Grave if enemy is nearly', true)
+dazzle.NearlyGraveUse = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Use Grave only if enemy is nearly', true)
 HeroesCore.AddOptionIcon(dazzle.NearlyGraveUse, '~/MenuIcons/horizontal.png')
 -- Auto Grave in FalsePromise
 dazzle.GraveInPromise = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Auto grave in FalsePromise', false)
