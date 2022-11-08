@@ -61,7 +61,7 @@ Menu.AddOptionTip(dazzle.ComboInMirrorShieldEnable, 'If you are immune to magic,
 -- Linken breaker
 dazzle.LinkenBreakerEnable = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence', 'Dazzle',  'Combo', 'Linken breaker' }, 'Enable', false)
 HeroesCore.AddMenuIcon({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Combo', 'Linken breaker' }, '~/MenuIcons/dota/linken.png')
-HeroesCore.AddOptionIcon(dazzle.LinkenBreakerEnable, '~/MenuIcons/status.png')
+HeroesCore.AddOptionIcon(dazzle.LinkenBreakerEnable, '~/MenuIcons/Enable/enable_check_boxed.png')
 -- Items for linken breaker
 dazzle.ItemsForLinkenBreaker = HeroesCore.AddOptionMultiSelect({'Hero Specific', 'Intelligence', 'Dazzle', 'Combo', 'Linken breaker'}, 'Items:', 
 {
@@ -432,6 +432,8 @@ function dazzle.OnUpdate()
                                         Ability.CastTarget(NPC.GetItem(MyHero, tostring(Items)), FriendlyTarget)
                                     end
                                 end
+                            else
+                                Ability.CastTarget(NPC.GetItem(MyHero, tostring(Items)), FriendlyTarget)
                             end
                         end
                     end
