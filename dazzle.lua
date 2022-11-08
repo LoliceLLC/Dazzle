@@ -163,8 +163,8 @@ local HeroSettings = {}
 
 -- Init in game
 local function Init()
-    if Engine.IsInGame() then
-        if IsDazzle then
+    if (Engine.IsInGame()) then
+        if (IsDazzle) then
             MyHero = Heroes.GetLocal()
             MyTeam = Entity.GetTeamNum(MyHero)
             MyPlayer = Players.GetLocal()
@@ -369,9 +369,9 @@ function dazzle.OnUpdate()
 
     if (Menu.IsEnabled(dazzle.Enable)) then
 
-        if MyHero == nil then return end
+        if (MyHero == nil) then return end
 
-        if not IsDazzle then return end
+        if (not IsDazzle) then return end
 
         -- Target particle
         UpdateParticle()
@@ -428,7 +428,7 @@ function dazzle.OnUpdate()
                                 Ability.CastNoTarget(NPC.GetItem(MyHero, tostring(Items)))
                             elseif (Items == 'item_urn_of_shadows' or Items == 'item_spirit_vessel') then
                                 if (Item.GetCurrentCharges(NPC.GetItem(MyHero, tostring(Items))) > 0) then
-                                    if not (NPC.HasModifier(FriendlyTarget, 'modifier_item_spirit_vessel_heal') or NPC.HasModifier(FriendlyTarget, 'modifier_item_urn_heal')) then
+                                    if (not NPC.HasModifier(FriendlyTarget, 'modifier_item_spirit_vessel_heal') or NPC.HasModifier(FriendlyTarget, 'modifier_item_urn_heal')) then
                                         Ability.CastTarget(NPC.GetItem(MyHero, tostring(Items)), FriendlyTarget)
                                     end
                                 end
@@ -461,7 +461,7 @@ function dazzle.OnUpdate()
         -- I hate HeroesCore ;-;
         -- EnemyTarget writer
         if (HeroesCore.GetTSelectorStyle()) == 1 then
-            if EnemyTarget == nil then
+            if (EnemyTarget == nil) then
                 if (Menu.IsKeyDown(dazzle.ComboBind)) then
                     EnemyTarget = HeroesCore.GetTarget(MyTeam, Enum.TeamType.TEAM_ENEMY)
                 end
@@ -478,12 +478,12 @@ function dazzle.OnUpdate()
             end
         end
 
-        if not (Entity.IsAlive(MyHero)) then
+        if (not Entity.IsAlive(MyHero)) then
             EnemyTarget = nil
         end
 
         -- Move to cursor
-        if not (EnemyTarget) then
+        if (not EnemyTarget) then
             if (HeroesCore.IsTSelectorMove() and Menu.IsKeyDown(dazzle.ComboBind)) then
                 NPC.MoveTo(MyHero, Input.GetWorldCursorPos())
             end
@@ -499,16 +499,16 @@ function dazzle.OnUpdate()
         -- funi Linken breaker
         BreakerItem = nil
         if (Menu.IsKeyDown(dazzle.ComboBind) and Menu.IsEnabled(dazzle.LinkenBreakerEnable) and NPC.IsLinkensProtected(EnemyTarget) and (not IsTargetedByProjectile(EnemyTarget))) then
-            if not NPC.HasState(EnemyTarget, Enum.ModifierState.MODIFIER_STATE_INVULNERABLE) then 
+            if (not NPC.HasState(EnemyTarget, Enum.ModifierState.MODIFIER_STATE_INVULNERABLE)) then 
                 for _, Item in ipairs(Menu.GetItems(dazzle.ItemsForLinkenBreaker)) do
-                    if Menu.IsSelected(dazzle.ItemsForLinkenBreaker, Item) then
-                        if Ability.IsCastable(NPC.GetItem(myHero, tostring(Item)), MyMana) then
+                    if (Menu.IsSelected(dazzle.ItemsForLinkenBreaker, Item)) then
+                        if (Ability.IsCastable(NPC.GetItem(myHero, tostring(Item)), MyMana)) then
                             BreakerItem = NPC.GetItem(myHero, tostring(Item))
                         break
                         end
                     end
                 end
-                if not (BreakerItem == nil) then
+                if (not BreakerItem == nil) then
                     Ability.CastTarget(BreakerItem, EnemyTarget)
                     Timer = GameTime + 0.2
                 end
@@ -606,7 +606,7 @@ function dazzle.OnUpdate()
 
             -- Target attack
             if (not CantAttack) then
-                if not IsGhosted(EnemyTarget) then
+                if (not IsGhosted(EnemyTarget)) then
                     Player.AttackTarget(MyPlayer, MyHero, EnemyTarget)
                     Timer = GameTime + 0.2
                 return end
