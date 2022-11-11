@@ -221,56 +221,12 @@ local function GetModifiersDieTimeByName(Hero, Name)
     end
 end
 
-local function GetStunTimeLeft(Npc)
-    local Mod = NPC.GetModifier(Npc, 'modifier_stunned')
-
-    if (not Mod) then Mod = NPC.GetModifier(Npc, 'modifier_jakiro_ice_path_stun') end
-    if (not Mod) then return 0 end
-
-    return math.max(Modifier.GetDieTime(Mod) - GameRules.GetGameTime(), 0)
-end
-
-local function CantMove(Npc)
-    if (not Npc) then return false end
-
-    if (GetStunTimeLeft(Npc) >= 1) then return true end
-    if (NPC.HasModifier(Npc, 'modifier_axe_berserkers_call')) then return true end
-    if (NPC.HasModifier(Npc, 'modifier_legion_commander_duel')) then return true end
-
-    return false
-end
-
-local function GetMoveSpeed(Npc)
-    local BaseSpeed = NPC.GetBaseSpeed(Npc)
-    local BonusSpeed = NPC.GetMoveSpeed(Npc) - NPC.GetBaseSpeed(Npc)
-
-    if (NPC.HasModifier(Npc, 'modifier_invoker_ice_wall_slow_debuff')) then return 100 end
-
-    if (NPC.HasModifier(Npc, 'modifier_item_diffusal_blade_slow')) then return 100 end
-
-    if (GetHexTimeLeft(Npc) > 0) then return 140 + BonusSpeed end
-
-    return BaseSpeed + BonusSpeed
-end
-
-local function PredictedPosition(Npc, Delay)
-    local Pos = Entity.GetAbsOrigin(Npc)
-
-    if (CantMove(Npc)) then return Pos end
-    if (not NPC.IsRunning(Npc) or not Delay) then return Pos end
-
-    local Dir = Entity.GetRotation(Npc):GetForward():Normalized()
-    local Speed = GetMoveSpeed(Npc)
-
-    return Pos + Dir:Scaled(Speed * Delay)
-end
-
 local function BestPosition(UnitsAround, Radius, PredictTime)
     if (not UnitsAround or #UnitsAround <= 0) then return nil end
 
     local EnemyNumber = #UnitsAround
 
-	if (EnemyNumber == 1) then return PredictedPosition(UnitsAround[1], PredictTime) end
+	if (EnemyNumber == 1) then return HeroesCore.GetPredictionPos(UnitsAround[1], PredictTime) end
 
 	local MaxNumber = 1
 	local BestPos = Entity.GetAbsOrigin(UnitsAround[1])
@@ -278,8 +234,8 @@ local function BestPosition(UnitsAround, Radius, PredictTime)
 	for i = 1, EnemyNumber-1 do
 		for j = i+1, EnemyNumber do
 			if (UnitsAround[i] and UnitsAround[j]) then
-				local Pos1 = PredictedPosition(UnitsAround[i], PredictTime)
-				local Pos2 = PredictedPosition(UnitsAround[j], PredictTime)
+				local Pos1 = HeroesCore.GetPredictionPos(UnitsAround[i], PredictTime)
+				local Pos2 = HeroesCore.GetPredictionPos(UnitsAround[j], PredictTime)
 				local Mid = Pos1:__add(Pos2):Scaled(0.5)
 
 				local HeroesNumber = 0
