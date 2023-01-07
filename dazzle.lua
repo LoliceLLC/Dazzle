@@ -138,7 +138,7 @@ local MyMana = nil
 
 -- Render
 local _screenW, _screenH = Renderer.GetScreenSize()
-local Multiplier = _screenH / 1080
+local Multiplier = _screenH / _screenH -- хуета ебанная
 
 -- Skills
 local PoisonTouch = nil
