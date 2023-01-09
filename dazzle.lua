@@ -8,7 +8,7 @@ if (CoreHero) then
 end
 HeroesCore.UseCurrentPath(IsDazzle)
 
--- Enbale/Disable
+-- Enable/Disable
 dazzle.Enable = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle' }, 'Enable', false)
 HeroesCore.AddOptionIcon(dazzle.Enable, '~/MenuIcons/Enable/enable_check_boxed.png')
 
@@ -80,6 +80,27 @@ dazzle.ItemsForLinkenBreaker = HeroesCore.AddOptionMultiSelect({'Hero Specific',
 HeroesCore.AddOptionIcon(dazzle.ItemsForLinkenBreaker, '~/MenuIcons/dots.png')
 Menu.AddOptionTip(dazzle.ItemsForLinkenBreaker, 'You can move items on LMB to change priority!')
 
+-- Blink usage
+local BlinkArgs = {
+  style = HeroesCore.AddOptionCombo({'Hero Specific', 'Intelligence', 'Dazzle', 'Combo', 'Blink options'}, 'Usage style', { "Don't use", "To enemy", "To cursor" }, 2),
+  key = HeroesCore.AddKeyOption({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Combo', 'Blink options' }, 'Additional key', Enum.ButtonCode.KEY_NONE),
+  graded_always = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Combo', 'Blink options' }, 'Use graded blink on close distance', true)
+}
+HeroesCore.AddMenuIcon({'Hero Specific', 'Intelligence', 'Dazzle', 'Combo', 'Blink options'}, 'panorama/images/items/blink_png.vtex_c')
+HeroesCore.AddOptionIcon(BlinkArgs.style, '~/MenuIcons/Lists/single_choice.png')
+HeroesCore.AddOptionIcon(BlinkArgs.key, '~/MenuIcons/status.png')
+HeroesCore.AddOptionIcon(BlinkArgs.graded_always, 'panorama/images/items/overwhelming_blink_png.vtex_c')
+function dazzle.OnMenuOptionChange(option, oldValue, newValue)
+  if (option ~= BlinkArgs.style) then return end
+  HeroesCore.UseCurrentPath(IsDazzle)
+  if (newValue == 1) then
+    BlinkArgs.distance = HeroesCore.AddOptionSlider({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Combo', 'Blink options' }, 'Blink distance', 0, 1200, 400)
+    HeroesCore.AddOptionIcon(BlinkArgs.distance, '~/MenuIcons/edit.png')
+  else
+    HeroesCore.RemoveOption(BlinkArgs.distance)
+    BlinkArgs.distance = nil
+  end
+end
 -- Auto Grave section
 dazzle.AutoSaveEnable = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle' , 'Auto Shallow Grave' }, 'Enable', false)
 HeroesCore.AddOptionIcon(dazzle.AutoSaveEnable, '~/MenuIcons/Enable/enable_check_boxed.png')
@@ -138,7 +159,7 @@ local MyMana = nil
 
 -- Render
 local _screenW, _screenH = Renderer.GetScreenSize()
-local Multiplier = _screenH / _screenH -- хуета ебанная
+local Multiplier = _screenH / 1080
 
 -- Skills
 local PoisonTouch = nil
@@ -328,17 +349,15 @@ function dazzle.OnUpdate()
         if (MyHero == nil) then return end
 
         if (not IsDazzle) then return end
-
         -- Target particle
         UpdateParticle()
 
         -- Amazing timer
         GameTime = GameRules.GetGameTime()
         if (Timer > GameTime) then return end
-        Timer = GameTime + 0.15
+        Timer = HeroesCore.GetSleep(0.1)
 
         UpdateInfo()
-        
         -- Return end if my hero stuned etc...
         if not Entity.IsAlive(MyHero) 
         or NPC.HasState(MyHero, Enum.ModifierState.MODIFIER_STATE_SILENCED)
@@ -445,7 +464,7 @@ function dazzle.OnUpdate()
             if (HeroesCore.IsTSelectorMove() and Menu.IsKeyDown(dazzle.ComboBind)) then
                 NPC.MoveTo(MyHero, Input.GetWorldCursorPos())
             end
-            return 
+            return
         end
 
         -- Another check...
@@ -468,16 +487,12 @@ function dazzle.OnUpdate()
                 end
                 if (not BreakerItem == nil) then
                     Ability.CastTarget(BreakerItem, EnemyTarget)
-                    Timer = GameTime + 0.2
                 end
             end
         end
         
         -- Combo
         if (Menu.IsKeyDown(dazzle.ComboBind)) then
-
-            -- Cant attack o_O
-            local CantAttack = false
 
             -- MirrorSheild check
             if (not Menu.IsEnabled(dazzle.ComboInMirrorShieldEnable)) then
@@ -498,6 +513,9 @@ function dazzle.OnUpdate()
                 if (NPC.IsLinkensProtected(EnemyTarget)) then return end
             end
 
+            -- Blink usage
+            HeroesCore.BlinkUsage(MyHero, EnemyTarget, BlinkArgs)
+            
             --Cool stepping
             local ComboCastStep = 0
 
@@ -534,6 +552,9 @@ function dazzle.OnUpdate()
                 end
             end
 
+            -- Cant attack o_O
+            local CantAttack = false
+
             -- Cast PoisonTouch
             if (ComboCastStep == 1) then
                 if (Ability.IsCastable(PoisonTouch, MyMana) and Menu.IsSelected(dazzle.AbilitiesForCombo, 'poison_touch')) then
@@ -565,8 +586,7 @@ function dazzle.OnUpdate()
             -- Target attack
             if (not CantAttack) then
                 if (not IsGhosted(EnemyTarget)) then
-                    Player.AttackTarget(MyPlayer, MyHero, EnemyTarget)
-                    Timer = GameTime + 0.2
+                    HeroesCore.Orbwalker(MyHero, EnemyTarget)
                 return end
             end
         end
@@ -578,14 +598,14 @@ local configName = 'cum_mega_dazzle_panel_positions'
 local UI = {
     x = Config.ReadInt(configName, 'x', 200),
     y = Config.ReadInt(configName, 'y', 200),
-    Width = 234,
-    Height = 54,
-    HeroBgW = 36,
-    HeroBgH = 36,
-    HeroW = 30,
-    HeroH = 30,
-    ToggleW = 48,
-    ToggleH = 48,
+    Width = 234 * Multiplier,
+    Height = 54 * Multiplier,
+    HeroBgW = 36 * Multiplier,
+    HeroBgH = 36 * Multiplier,
+    HeroW = 30 * Multiplier,
+    HeroH = 30 * Multiplier,
+    ToggleW = 48 * Multiplier,
+    ToggleH = 48 * Multiplier,
     MoveW = 0,
     MoveH = 0,
     IsMoving = false,
@@ -624,7 +644,7 @@ function dazzle.MovingManager()
         Config.WriteInt(configName, 'y', UI.y)
 
         UI.MoveW = w
-        UI.MoveH = h    
+        UI.MoveH = h
     else
         UI.IsMoving = false
     end
@@ -639,7 +659,7 @@ function dazzle.DrawUI()
     UI.x, UI.y = dazzle.ScreenClamp(UI.x, UI.y)
     local x = UI.x
 
-    Renderer.DrawFilledRoundedRect(x, UI.y, UI.Width * Multiplier, UI.Height * Multiplier, 10, 23, 30, 37)
+    Renderer.DrawFilledRoundedRect(x, UI.y, UI.Width, UI.Height, 10, 23, 30, 37)
 
     local Heroes = dazzle.GetTeammates()
 
@@ -651,21 +671,21 @@ function dazzle.DrawUI()
 
         if (not HeroSettings[Hero]) then
             HeroSettings[Hero] = {
-                enabled = true 
+                enabled = true
             }
         end
 
-        Renderer.DrawFilledRoundedRect(x, UI.y + 9, UI.HeroBgW * Multiplier, UI.HeroBgH * Multiplier, 8, 31, 40, 52)
+        Renderer.DrawFilledRoundedRect(x, UI.y + (9 * Multiplier), UI.HeroBgW, UI.HeroBgH, 8, 31, 40, 52)
 
         if (HeroSettings[Hero].enabled) then
             Renderer.SetDrawColor(255, 255, 255, 255)
-            Renderer.DrawImage(ToggleOn, x - 6, UI.y + 3, UI.ToggleW * Multiplier, UI.ToggleH * Multiplier)
+            Renderer.DrawImage(ToggleOn, x - (6 * Multiplier), UI.y + (3 * Multiplier), UI.ToggleW, UI.ToggleH)
         else
             Renderer.SetDrawColor(255, 255, 255, 255)
-            Renderer.DrawImage(ToggleOff, x - 6, UI.y + 3, UI.ToggleW * Multiplier, UI.ToggleH * Multiplier)
+            Renderer.DrawImage(ToggleOff, x - (6 * Multiplier), UI.y + (3 * Multiplier), UI.ToggleW, UI.ToggleH)
         end
         
-        if (Input.IsCursorInRect(x, UI.y, UI.HeroBgW * Multiplier, UI.HeroBgH * Multiplier)) then
+        if (Input.IsCursorInRect(x, UI.y + (9 * Multiplier), UI.HeroBgW, UI.HeroBgH)) then
             if (Input.IsKeyDownOnce(Enum.ButtonCode.KEY_MOUSE1)) then
                 HeroSettings[Hero].enabled = not HeroSettings[Hero].enabled
             end
@@ -677,13 +697,13 @@ function dazzle.DrawUI()
 
         if (HeroSettings[Hero].enabled) then
             Renderer.SetDrawColor(255, 255, 255, 255)
-            Renderer.DrawImage(HeroImage[NPC.GetUnitName(Hero)], x + 3, UI.y + 12, UI.HeroW * Multiplier, UI.HeroH * Multiplier)
+            Renderer.DrawImage(HeroImage[NPC.GetUnitName(Hero)], x + (3 * Multiplier), UI.y + (12 * Multiplier), UI.HeroW, UI.HeroH)
         else
             Renderer.SetDrawColor(100, 100, 100, 255)
-            Renderer.DrawImage(HeroImage[NPC.GetUnitName(Hero)], x + 3, UI.y + 12, UI.HeroW * Multiplier, UI.HeroH * Multiplier)
+            Renderer.DrawImage(HeroImage[NPC.GetUnitName(Hero)], x + (3 * Multiplier), UI.y + (12 * Multiplier), UI.HeroW, UI.HeroH)
         end
 
-        x = x + 36 + 9
+        x = x + (36 + 9) * Multiplier
     end
 
     if (Input.IsCursorInRect(UI.x, UI.y, UI.Width, UI.Height) and not UI.IsMoving and Input.IsKeyDownOnce(Enum.ButtonCode.KEY_MOUSE1)) then
