@@ -489,7 +489,7 @@ function dazzle.OnUpdate()
 
         -- funi Linken breaker
         BreakerItem = nil
-        if (Menu.IsKeyDown(dazzle.ComboBind) and Menu.IsEnabled(dazzle.LinkenBreakerEnable) and NPC.IsLinkensProtected(EnemyTarget) and (not IsTargetedByProjectile(EnemyTarget))) then
+        if (Menu.IsKeyDown(dazzle.ComboBind) and Menu.IsEnabled(dazzle.LinkenBreakerEnable) and NPC.IsLinkensProtected(EnemyTarget) and (not dazzle.IsTargetedByProjectile(EnemyTarget))) then
             if (not NPC.HasState(EnemyTarget, Enum.ModifierState.MODIFIER_STATE_INVULNERABLE)) then 
                 for _, Item in ipairs(Menu.GetItems(dazzle.ItemsForLinkenBreaker)) do
                     if (Menu.IsSelected(dazzle.ItemsForLinkenBreaker, Item)) then
@@ -547,7 +547,7 @@ function dazzle.OnUpdate()
                                             Ability.CastTarget(NPC.GetItem(MyHero, tostring(Items)), MyHero)
                                         else
                                             if (Items == 'item_satanic') then
-                                                if (Entity.GetHealth(MyHero) < GetPercent(Menu.GetValue(dazzle.SatanicUsagePercent), Entity.GetMaxHealth(MyHero))) then
+                                                if (Entity.GetHealth(MyHero) < dazzle.GetPercent(Menu.GetValue(dazzle.SatanicUsagePercent), Entity.GetMaxHealth(MyHero))) then
                                                     Ability.CastNoTarget(NPC.GetItem(MyHero, tostring(Items)))
                                                 end
                                             else
@@ -569,7 +569,7 @@ function dazzle.OnUpdate()
                                             end
                                         end
                                     else
-                                        Ability.CastPosition(NPC.GetItem(MyHero, tostring(Items)), BestPosition(Heroes.InRadius(Entity.GetAbsOrigin(EnemyTarget), 1000, MyTeam, Enum.TeamType.TEAM_ENEMY),500, 0.3))
+                                        Ability.CastPosition(NPC.GetItem(MyHero, tostring(Items)), dazzle.BestPosition(Heroes.InRadius(Entity.GetAbsOrigin(EnemyTarget), 1000, MyTeam, Enum.TeamType.TEAM_ENEMY),500, 0.3))
                                     end
                                 end
                             else
