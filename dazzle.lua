@@ -36,8 +36,10 @@ dazzle.ItemsForCombo = HeroesCore.AddOptionMultiSelect({ 'Hero Specific', 'Intel
     { 'item_veil_of_discord', 'panorama/images/items/veil_of_discord_png.vtex_c', true },
     { 'item_shivas_guard', 'panorama/images/items/shivas_guard_png.vtex_c', true },
     { 'item_ancient_janggo', 'panorama/images/items/ancient_janggo_png.vtex_c', true },
+    { 'item_boots_of_bearing', 'panorama/images/items/boots_of_bearing_png.vtex_c', true },
     { 'item_heavens_halberd', 'panorama/images/items/heavens_halberd_png.vtex_c', true },
     { 'item_mjollnir', 'panorama/images/items/mjollnir_png.vtex_c', true },
+    { 'item_manta', 'panorama/images/items/manta_png.vtex_c', true },
     { 'item_medallion_of_courage', 'panorama/images/items/medallion_of_courage_png.vtex_c', true },
     { 'item_solar_crest', 'panorama/images/items/solar_crest_png.vtex_c', true },
     { 'item_diffusal_blade', 'panorama/images/items/diffusal_blade_png.vtex_c', true },
@@ -107,6 +109,7 @@ function dazzle.OnMenuOptionChange(option, oldValue, newValue)
     BlinkArgs.distance = nil
   end
 end
+
 -- Auto Grave section
 dazzle.AutoSaveEnable = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle' , 'Auto Shallow Grave' }, 'Enable', false)
 HeroesCore.AddOptionIcon(dazzle.AutoSaveEnable, '~/MenuIcons/Enable/enable_check_boxed.png')
@@ -117,6 +120,9 @@ HeroesCore.AddOptionIcon(dazzle.Percent, '~/MenuIcons/bar_ally.png')
 -- Use Grave if enemy is nearly
 dazzle.NearlyGraveUse = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Use Grave only if enemy is nearly', true)
 HeroesCore.AddOptionIcon(dazzle.NearlyGraveUse, '~/MenuIcons/horizontal.png')
+-- Enemy search radius 
+dazzle.EnemySearchRadius = HeroesCore.AddOptionSlider({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Enemy search radius', 1, 2000, 1200)
+HeroesCore.AddOptionIcon(dazzle.EnemySearchRadius, '~/MenuIcons/radar_scan.png')
 -- Auto Grave in FalsePromise
 dazzle.GraveInPromise = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Auto grave in FalsePromise', false)
 Menu.AddOptionTip(dazzle.GraveInPromise, 'Automatically cast FalsePromise at the end.')
@@ -189,7 +195,7 @@ local ParticleHandler = 0
 local HeroSettings = {}
 
 -- Init in game
-local function Init()
+function dazzle.Init()
     if (Engine.IsInGame()) then
         if (IsDazzle) then
             MyHero = Heroes.GetLocal()
@@ -199,10 +205,10 @@ local function Init()
     end
 end
 
-Init()
+dazzle.Init()
 
 function dazzle.OnGameStart()
-    Init()
+    dazzle.Init()
 end
 
 function dazzle.GetTeammates()
@@ -217,7 +223,7 @@ function dazzle.GetTeammates()
     return HeroesTable
 end
 
-local function UpdateInfo()
+function dazzle.UpdateInfo()
     -- My mana
     MyMana = NPC.GetMana(MyHero)
     -- Hero skills
@@ -231,14 +237,14 @@ local function UpdateInfo()
     BadRange = Ability.GetCastRange(NPC.GetAbility(MyHero, 'dazzle_bad_juju'))
 end
 
-local function GetPercent(Percent,MaxValue)
+function dazzle.GetPercent(Percent,MaxValue)
     if tonumber(Percent) and tonumber(MaxValue) then
         return (MaxValue * Percent) / 100
     end
     return 696969696969691337 -- erorhendler))))
 end
 
-local function GetModifiersDieTimeByName(Hero, Name)
+function dazzle.GetModifiersDieTimeByName(Hero, Name)
     Modifiers = NPC.GetModifiers(Hero)
     for _, Modifs in pairs(Modifiers) do
         if (Modifier.GetName(Modifs) == Name) then
@@ -248,7 +254,7 @@ local function GetModifiersDieTimeByName(Hero, Name)
     end
 end
 
-local function BestPosition(UnitsAround, Radius, PredictTime)
+function dazzle.BestPosition(UnitsAround, Radius, PredictTime)
     if (not UnitsAround or #UnitsAround <= 0) then return nil end
 
     local EnemyNumber = #UnitsAround
@@ -283,14 +289,14 @@ local function BestPosition(UnitsAround, Radius, PredictTime)
 	return BestPos
 end
 
-local function IsGhosted(Hero)
+function dazzle.IsGhosted(Hero)
     if ((not NPC.HasModifier(Hero, 'modifier_item_ethereal_blade_ethereal')) and (not NPC.HasModifier(Hero, 'modifier_ghost_state'))) then
         return false
     end
     return true
 end
 
-local function UpdateParticle()
+function dazzle.UpdateParticle()
     if (EnemyTarget and Menu.IsKeyDown(dazzle.ComboBind) and HeroesCore.IsTSelectorParticle()) then
         if (ParticleHandler == 0) then
             ParticleHandler = Particle.Create('particles/ui_mouseactions/range_finder_tower_aoe.vpcf', Enum.ParticleAttachment.PATTACH_INVALID, EnemyTarget)	
@@ -306,7 +312,7 @@ local function UpdateParticle()
     end
 end
 
-local function IsTargetedByProjectile(Hero)
+function dazzle.IsTargetedByProjectile(Hero)
     for _, TargetProjectile in pairs(TargetProjectiles.GetAll()) do
         if (TargetProjectile.Hero == Hero) then
             return true
@@ -315,7 +321,7 @@ local function IsTargetedByProjectile(Hero)
     return false
 end
 
-local function NotAvailableModifs(Hero)
+function dazzle.NotAvailableModifs(Hero)
     return (NPC.HasModifier(Hero, 'modifier_dazzle_shallow_grave') or NPC.HasModifier(Hero, 'modifier_pudge_swallow_hide')
     or NPC.HasModifier(Hero, 'modifier_obsidian_destroyer_astral_imprisonment_prison') or NPC.HasModifier(Hero, 'modifier_puck_phase_shift')
     or NPC.HasModifier(Hero, 'modifier_life_stealer_infest') or NPC.HasModifier(Hero, 'modifier_juggernaut_omnislash')
@@ -326,13 +332,13 @@ local function NotAvailableModifs(Hero)
     or NPC.HasModifier(Hero, 'modifier_invoker_tornado') or NPC.HasModifier(Hero, 'modifier_visage_summon_familiars_stone_form_buff'))
 end
 
-local function GetTheRightHero() 
+function dazzle.GetTheRightHero() 
     if (Menu.IsEnabled(dazzle.Enable)) then
         for _, FriendlyHeroes in pairs(Heroes.InRadius(Entity.GetOrigin(MyHero), GraveRange, Entity.GetTeamNum(MyTeam), Enum.TeamType.TEAM_FRIEND)) do
             if (HeroSettings[FriendlyHeroes]) then 
                 if (HeroSettings[FriendlyHeroes].enabled) then
-                    if (Entity.GetHealth(FriendlyHeroes) < GetPercent(Menu.GetValue(dazzle.Percent), Entity.GetMaxHealth(FriendlyHeroes))) then
-                        local EnemyHeroes = Entity.GetHeroesInRadius(FriendlyHeroes, 1100, Enum.TeamType.TEAM_ENEMY)
+                    if (Entity.GetHealth(FriendlyHeroes) < dazzle.GetPercent(Menu.GetValue(dazzle.Percent), Entity.GetMaxHealth(FriendlyHeroes))) then
+                        local EnemyHeroes = Entity.GetHeroesInRadius(FriendlyHeroes, Menu.GetValue(dazzle.EnemySearchRadius), Enum.TeamType.TEAM_ENEMY)
                         if (Menu.IsEnabled(dazzle.NearlyGraveUse)) then
                             if (#EnemyHeroes >= 1) then
                                 return FriendlyHeroes
@@ -353,17 +359,19 @@ function dazzle.OnUpdate()
     if (Menu.IsEnabled(dazzle.Enable)) then
 
         if (MyHero == nil) then return end
-
         if (not IsDazzle) then return end
+
         -- Target particle
-        UpdateParticle()
+        dazzle.UpdateParticle()
 
         -- Amazing timer
         GameTime = GameRules.GetGameTime()
         if (Timer > GameTime) then return end
         Timer = HeroesCore.GetSleep(0.1)
 
-        UpdateInfo()
+        -- Updater
+        dazzle.UpdateInfo()
+
         -- Return end if my hero stuned etc...
         if not Entity.IsAlive(MyHero) 
         or NPC.HasState(MyHero, Enum.ModifierState.MODIFIER_STATE_SILENCED)
@@ -377,15 +385,15 @@ function dazzle.OnUpdate()
         or NPC.HasModifier(MyHero, 'modifier_axe_berserkers_call')
         then return end
 
-        local RightHero = GetTheRightHero()
+        local RightHero = dazzle.GetTheRightHero()
 
         -- Auto Grave
         if (Menu.IsEnabled(dazzle.AutoSaveEnable)) then
             if (Ability.IsCastable(ShallowGrave, MyMana)) then
                 -- Return if hero not available to cast Grave
-                if (not NotAvailableModifs(RightHero)) then
+                if (not dazzle.NotAvailableModifs(RightHero)) then
                     if (Menu.IsEnabled(dazzle.GraveInPromise)) then
-                        if (NPC.HasModifier(RightHero, 'modifier_oracle_false_promise_timer') and GetModifiersDieTimeByName(RightHero, 'modifier_oracle_false_promise_timer') < 1) then
+                        if (NPC.HasModifier(RightHero, 'modifier_oracle_false_promise_timer') and dazzle.GetModifiersDieTimeByName(RightHero, 'modifier_oracle_false_promise_timer') < 1) then
                             Ability.CastTarget(ShallowGrave, RightHero)
                         elseif (not NPC.HasModifier(RightHero, 'modifier_oracle_false_promise_timer')) then
                             Ability.CastTarget(ShallowGrave, RightHero)
@@ -477,7 +485,7 @@ function dazzle.OnUpdate()
         if (Entity.IsDormant(EnemyTarget) or not Entity.IsAlive(EnemyTarget) or NPC.IsStructure(EnemyTarget) or NPC.HasState(EnemyTarget, Enum.ModifierState.MODIFIER_STATE_MAGIC_IMMUNE)) then return end
 
         -- Check on the NotAvailableModifs
-        if (NotAvailableModifs(EnemyTarget)) then return end
+        if (dazzle.NotAvailableModifs(EnemyTarget)) then return end
 
         -- funi Linken breaker
         BreakerItem = nil
@@ -531,7 +539,7 @@ function dazzle.OnUpdate()
                     for _, Items in ipairs(Menu.GetItems(dazzle.ItemsForCombo)) do
                         if (Menu.IsSelected(dazzle.ItemsForCombo, Items)) then
                             if (Ability.IsCastable(NPC.GetItem(MyHero, tostring(Items)), MyMana)) then
-                                if (Items == 'item_shivas_guard' or Items == 'item_ancient_janggo' or Items == 'item_black_king_bar') then
+                                if (Items == 'item_shivas_guard' or Items == 'item_ancient_janggo' or Items == 'item_boots_of_bearing' or Items == 'item_manta' or Items == 'item_black_king_bar') then
                                     Ability.CastNoTarget(NPC.GetItem(MyHero, tostring(Items)))
                                 else
                                     if (Items ~= 'item_gungir' and Items ~= 'item_veil_of_discord') then
@@ -608,7 +616,7 @@ function dazzle.OnUpdate()
                 if (NPC.HasModifier(MyHero, 'modifier_item_revenants_brooch_counter')) then
                     HeroesCore.Orbwalker(MyHero, EnemyTarget)
                 else
-                    if (not IsGhosted(EnemyTarget)) then
+                    if (not dazzle.IsGhosted(EnemyTarget)) then
                         HeroesCore.Orbwalker(MyHero, EnemyTarget)
                     end
                 return end
