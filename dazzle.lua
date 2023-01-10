@@ -1,3 +1,4 @@
+---@diagnostic disable: undefined-global
 local dazzle = {}
 
 -- Hero detect for HeroesCore
@@ -25,7 +26,7 @@ dazzle.AbilitiesForCombo = HeroesCore.AddOptionMultiSelect({ 'Hero Specific', 'I
 }, false)
 HeroesCore.AddOptionIcon(dazzle.AbilitiesForCombo, '~/MenuIcons/dots.png')
 -- Items for combo
-dazzle.ItemsForCombo = HeroesCore.AddOptionMultiSelect({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Combo' }, 'Items for combo:', 
+dazzle.ItemsForCombo = HeroesCore.AddOptionMultiSelect({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Combo', 'Items' }, 'Items for combo:', 
 {
     { 'item_orchid', 'panorama/images/items/orchid_png.vtex_c', true },
     { 'item_bloodthorn', 'panorama/images/items/bloodthorn_png.vtex_c', true },
@@ -41,14 +42,20 @@ dazzle.ItemsForCombo = HeroesCore.AddOptionMultiSelect({ 'Hero Specific', 'Intel
     { 'item_medallion_of_courage', 'panorama/images/items/medallion_of_courage_png.vtex_c', true },
     { 'item_solar_crest', 'panorama/images/items/solar_crest_png.vtex_c', true },
     { 'item_diffusal_blade', 'panorama/images/items/diffusal_blade_png.vtex_c', true },
+    { 'item_revenants_brooch', 'panorama/images/items/revenants_brooch_png.vtex_c', true },
+    { 'item_ethereal_blade', 'panorama/images/items/ethereal_blade_png.vtex_c', true },
     { 'item_satanic', 'panorama/images/items/satanic_png.vtex_c', true },
     { 'item_black_king_bar', 'panorama/images/items/black_king_bar_png.vtex_c', false }
 }, false)
 HeroesCore.AddOptionIcon(dazzle.ItemsForCombo, '~/MenuIcons/dots.png')
+HeroesCore.AddMenuIcon({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Combo', 'Items' }, '~/MenuIcons/ps_items.png')
 Menu.AddOptionTip(dazzle.ItemsForCombo, 'You can move items on LMB to change priority!')
 -- Satanic settings
-dazzle.SatanicUsagePercent = HeroesCore.AddOptionSlider({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Combo' }, 'Percent HP for use Satanic', 1, 100, 25)
+dazzle.SatanicUsagePercent = HeroesCore.AddOptionSlider({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Combo', 'Items' }, 'Percent HP for use Satanic', 1, 100, 25)
 HeroesCore.AddOptionIcon(dazzle.SatanicUsagePercent, '~/MenuIcons/bar_enemy.png')
+-- Use e-blade only with brooch
+dazzle.UseEbladeOnlyInBrooch = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Combo', 'Items' }, 'Use e-blade only with brooch', false)
+HeroesCore.AddOptionIcon(dazzle.UseEbladeOnlyInBrooch, 'panorama/images/items/ethereal_blade_png.vtex_c')
 -- Combo in lotus
 dazzle.ComboInLotusEnable = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Combo' }, 'Combo in LotusOrb', false)
 HeroesCore.AddOptionIcon(dazzle.ComboInLotusEnable, 'panorama/images/items/lotus_orb_png.vtex_c')
@@ -159,7 +166,7 @@ local MyMana = nil
 
 -- Render
 local _screenW, _screenH = Renderer.GetScreenSize()
-local Multiplier = _screenH / 1080
+local Multiplier = _screenH / 1080 -- хуета ебанная
 
 -- Skills
 local PoisonTouch = nil
@@ -537,7 +544,21 @@ function dazzle.OnUpdate()
                                                     Ability.CastNoTarget(NPC.GetItem(MyHero, tostring(Items)))
                                                 end
                                             else
-                                                Ability.CastTarget(NPC.GetItem(MyHero, tostring(Items)), EnemyTarget)
+                                                if (Items == 'item_ethereal_blade') then
+                                                    if (Menu.IsEnabled(dazzle.UseEbladeOnlyInBrooch)) then
+                                                        if (NPC.HasModifier(MyHero, 'modifier_item_revenants_brooch_counter'))then
+                                                            Ability.CastTarget(NPC.GetItem(MyHero, tostring(Items)), EnemyTarget)
+                                                        end
+                                                    else
+                                                        Ability.CastTarget(NPC.GetItem(MyHero, tostring(Items)), EnemyTarget)
+                                                    end
+                                                else
+                                                    if (Items == 'item_revenants_brooch' and not NPC.HasModifier(MyHero, 'modifier_item_revenants_brooch_counter')) then
+                                                        Ability.CastNoTarget(NPC.GetItem(MyHero, tostring(Items)))
+                                                    else
+                                                        Ability.CastTarget(NPC.GetItem(MyHero, tostring(Items)), EnemyTarget)
+                                                    end
+                                                end
                                             end
                                         end
                                     else
@@ -585,8 +606,12 @@ function dazzle.OnUpdate()
 
             -- Target attack
             if (not CantAttack) then
-                if (not IsGhosted(EnemyTarget)) then
+                if (NPC.HasModifier(MyHero, 'modifier_item_revenants_brooch_counter')) then
                     HeroesCore.Orbwalker(MyHero, EnemyTarget)
+                else
+                    if (not IsGhosted(EnemyTarget)) then
+                        HeroesCore.Orbwalker(MyHero, EnemyTarget)
+                    end
                 return end
             end
         end
