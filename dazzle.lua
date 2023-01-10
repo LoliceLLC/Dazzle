@@ -1,4 +1,3 @@
----@diagnostic disable: undefined-global
 local dazzle = {}
 
 -- Hero detect for HeroesCore
@@ -166,7 +165,7 @@ local MyMana = nil
 
 -- Render
 local _screenW, _screenH = Renderer.GetScreenSize()
-local Multiplier = _screenH / 1080 -- хуета ебанная
+local Multiplier = _screenH / 1080
 
 -- Skills
 local PoisonTouch = nil
