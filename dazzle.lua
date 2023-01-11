@@ -501,8 +501,6 @@ function dazzle.OnUpdate()
         if (Timer > GameTime) then return end
         Timer = HeroesCore.GetSleep(0.1)
 
-        dazzle.SavingFromDangerousSkills()
-
         -- Updater
         dazzle.UpdateInfo()
 
