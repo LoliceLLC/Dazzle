@@ -90,7 +90,7 @@ Menu.AddOptionTip(dazzle.ItemsForLinkenBreaker, 'You can move items on LMB to ch
 
 -- Blink usage
 local BlinkArgs = {
-  style = HeroesCore.AddOptionCombo({'Hero Specific', 'Intelligence', 'Dazzle', 'Combo', 'Blink options'}, 'Usage style', { "Don't use", "To enemy", "To cursor" }, 2),
+  style = HeroesCore.AddOptionCombo({'Hero Specific', 'Intelligence', 'Dazzle', 'Combo', 'Blink options'}, 'Usage style', { "Don't use", 'To enemy', 'To cursor' }, 2),
   key = HeroesCore.AddKeyOption({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Combo', 'Blink options' }, 'Additional key', Enum.ButtonCode.KEY_NONE),
   graded_always = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Combo', 'Blink options' }, 'Use graded blink on close distance', true)
 }
@@ -99,23 +99,23 @@ HeroesCore.AddOptionIcon(BlinkArgs.style, '~/MenuIcons/Lists/single_choice.png')
 HeroesCore.AddOptionIcon(BlinkArgs.key, '~/MenuIcons/status.png')
 HeroesCore.AddOptionIcon(BlinkArgs.graded_always, 'panorama/images/items/overwhelming_blink_png.vtex_c')
 function dazzle.OnMenuOptionChange(option, oldValue, newValue)
-  if (option ~= BlinkArgs.style) then return end
-  HeroesCore.UseCurrentPath(IsDazzle)
-  if (newValue == 1) then
-    BlinkArgs.distance = HeroesCore.AddOptionSlider({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Combo', 'Blink options' }, 'Blink distance', 0, 1200, 400)
-    HeroesCore.AddOptionIcon(BlinkArgs.distance, '~/MenuIcons/edit.png')
-  else
-    HeroesCore.RemoveOption(BlinkArgs.distance)
-    BlinkArgs.distance = nil
-  end
+    if (option ~= BlinkArgs.style) then return end
+    HeroesCore.UseCurrentPath(IsDazzle)
+    if (newValue == 1) then
+        BlinkArgs.distance = HeroesCore.AddOptionSlider({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Combo', 'Blink options' }, 'Blink distance', 0, 1200, 400)
+        HeroesCore.AddOptionIcon(BlinkArgs.distance, '~/MenuIcons/edit.png')
+    else
+        HeroesCore.RemoveOption(BlinkArgs.distance)
+        BlinkArgs.distance = nil
+    end
 end
 
 -- Auto Grave section
 dazzle.AutoSaveEnable = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle' , 'Auto Shallow Grave' }, 'Enable', false)
+HeroesCore.AddMenuIcon({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Auto Shallow Grave' }, 'panorama/images/spellicons/dazzle_shallow_grave_png.vtex_c')
 HeroesCore.AddOptionIcon(dazzle.AutoSaveEnable, '~/MenuIcons/Enable/enable_check_boxed.png')
 -- Percent of max HP
 dazzle.Percent = HeroesCore.AddOptionSlider({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Percent of max HP', 1, 100, 5)
-HeroesCore.AddMenuIcon({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Auto Shallow Grave' }, 'panorama/images/spellicons/dazzle_shallow_grave_png.vtex_c')
 HeroesCore.AddOptionIcon(dazzle.Percent, '~/MenuIcons/bar_ally.png')
 -- Use Grave if enemy is nearly
 dazzle.NearlyGraveUse = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Use Grave only if enemy is nearly', true)
@@ -127,6 +127,19 @@ HeroesCore.AddOptionIcon(dazzle.EnemySearchRadius, '~/MenuIcons/radar_scan.png')
 dazzle.GraveInPromise = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle', 'Auto Shallow Grave' }, 'Auto grave in FalsePromise', false)
 Menu.AddOptionTip(dazzle.GraveInPromise, 'Automatically cast FalsePromise at the end.')
 HeroesCore.AddOptionIcon(dazzle.GraveInPromise, 'panorama/images/spellicons/oracle_false_promise_png.vtex_c')
+-- Saving from dangerous
+dazzle.DNGSavingEnable = HeroesCore.AddOptionBool({ 'Hero Specific', 'Intelligence',  'Dazzle' , 'Auto Shallow Grave', 'Saving from dangerous skills' }, 'Enable', false)
+HeroesCore.AddMenuIcon({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Auto Shallow Grave', 'Saving from dangerous skills' }, '~/MenuIcons/skull.png')
+HeroesCore.AddOptionIcon(dazzle.DNGSavingEnable, '~/MenuIcons/Enable/enable_check_boxed.png')
+-- Saving from dangerous skill 
+dazzle.DNGSavingSkills = HeroesCore.AddOptionMultiSelect({ 'Hero Specific', 'Intelligence', 'Dazzle', 'Auto Shallow Grave', 'Saving from dangerous skills' }, 'Skills:', 
+{
+    { 'laguna_blade', 'panorama/images/spellicons/lina_laguna_blade_png.vtex_c', true },
+    { 'finger_of_death', 'panorama/images/spellicons/lion_finger_of_death_png.vtex_c', true },
+    { 'thundergods_wrath', 'panorama/images/spellicons/zuus_thundergods_wrath_png.vtex_c', true },
+    { 'sonic_wave', 'panorama/images/spellicons/queenofpain_sonic_wave_png.vtex_c', true }
+}, false)
+HeroesCore.AddOptionIcon(dazzle.DNGSavingSkills, '~/MenuIcons/dots.png')
 
 -- Heal section
 dazzle.HealBind = HeroesCore.AddKeyOption({ 'Hero Specific', 'Intelligence',  'Dazzle' , 'Healing' }, 'Heal target teammates', Enum.ButtonCode.KEY_NONE)
@@ -334,17 +347,17 @@ end
 
 function dazzle.GetTheRightHero() 
     if (Menu.IsEnabled(dazzle.Enable)) then
-        for _, FriendlyHeroes in pairs(Heroes.InRadius(Entity.GetOrigin(MyHero), GraveRange, Entity.GetTeamNum(MyTeam), Enum.TeamType.TEAM_FRIEND)) do
-            if (HeroSettings[FriendlyHeroes]) then 
-                if (HeroSettings[FriendlyHeroes].enabled) then
-                    if (Entity.GetHealth(FriendlyHeroes) < dazzle.GetPercent(Menu.GetValue(dazzle.Percent), Entity.GetMaxHealth(FriendlyHeroes))) then
-                        local EnemyHeroes = Entity.GetHeroesInRadius(FriendlyHeroes, Menu.GetValue(dazzle.EnemySearchRadius), Enum.TeamType.TEAM_ENEMY)
+        for _, Heroes in pairs(Heroes.InRadius(Entity.GetOrigin(MyHero), GraveRange, Entity.GetTeamNum(MyTeam), Enum.TeamType.TEAM_FRIEND)) do
+            if (HeroSettings[Heroes]) then
+                if (HeroSettings[Heroes].enabled) then
+                    if (Entity.GetHealth(Heroes) < dazzle.GetPercent(Menu.GetValue(dazzle.Percent), Entity.GetMaxHealth(Heroes))) then
+                        local EnemyHeroes = Entity.GetHeroesInRadius(Heroes, Menu.GetValue(dazzle.EnemySearchRadius), Enum.TeamType.TEAM_ENEMY)
                         if (Menu.IsEnabled(dazzle.NearlyGraveUse)) then
                             if (#EnemyHeroes >= 1) then
-                                return FriendlyHeroes
+                                return Heroes
                             end
                         else
-                            return FriendlyHeroes
+                            return Heroes
                         end
                     end
                 end
@@ -353,6 +366,125 @@ function dazzle.GetTheRightHero()
         return false
     end
 end
+
+-- Experimental ( WIP maybe)) )
+
+function dazzle.CustomFindFacingNPC(Npc, Ignore, TeamType, Int, Hero, PlusRange)
+    return NPC.FindFacingNPC(Npc, Ignore, TeamType, Int, Ability.GetCastRange(NPC.GetAbilityByIndex(Hero, 5)) + PlusRange) -- userdate is very cool))
+end
+
+function dazzle.SavingFromDangerousSkills() 
+    if (Menu.IsEnabled(dazzle.Enable) and Menu.IsEnabled(dazzle.DNGSavingEnable)) then
+        for _, FriendlyHeroes in pairs(Heroes.InRadius(Entity.GetOrigin(MyHero), GraveRange, Entity.GetTeamNum(MyTeam), Enum.TeamType.TEAM_FRIEND)) do
+            for _, Heroes in pairs(Heroes.GetAll()) do 
+                if Heroes and not Entity.IsSameTeam(MyHero, Heroes) then
+                    -- Save from Laguna Blade
+                    local LinaFacing = dazzle.CustomFindFacingNPC(Heroes, nil, Enum.TeamType.TEAM_ENEMY, 5, Heroes, 15)
+                    if (NPC.GetUnitName(Heroes) == 'npc_dota_hero_lina' and Menu.IsSelected(dazzle.DNGSavingSkills, 'laguna_blade') and Ability.IsInAbilityPhase(NPC.GetAbilityByIndex(Heroes, 5)) and LinaFacing and not NPC.IsTurning(Heroes)) then
+                        local LagunaBasicDamage = Ability.GetLevelSpecialValueFor(NPC.GetAbilityByIndex(Heroes, 5), 'damage')
+                        local LinaSpellAmplification = NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE) + NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE_UNIQUE)
+                        local LagunaDamage = 0
+
+                        if (Ability.GetLevel(NPC.GetAbility(Heroes, 'special_bonus_unique_lina_7')) > 0) then
+                            LagunaDamage = LagunaBasicDamage + (LagunaBasicDamage * (LinaSpellAmplification * 0.01))
+                        else
+                            LagunaDamage = LagunaBasicDamage * NPC.GetMagicalArmorDamageMultiplier(LinaFacing)
+                        end
+
+                        if (NPC.IsEntityInRange(MyHero, LinaFacing, GraveRange)) then
+                            if (Entity.GetHealth(LinaFacing) < LagunaDamage) then
+                                if (HeroSettings[LinaFacing]) then
+                                    if (HeroSettings[LinaFacing].enabled) then
+                                        return LinaFacing
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    -- Save from Finger of Death
+                    local LionFacing = dazzle.CustomFindFacingNPC(Heroes, nil, Enum.TeamType.TEAM_ENEMY, 5, Heroes, 15)
+                    if (NPC.GetUnitName(Heroes) == 'npc_dota_hero_lion' and Menu.IsSelected(dazzle.DNGSavingSkills, 'finger_of_death') and Ability.IsInAbilityPhase(NPC.GetAbilityByIndex(Heroes, 5)) and LionFacing and not NPC.IsTurning(Heroes)) then
+                        local FingerBasicDamage = Ability.GetLevelSpecialValueFor(NPC.GetAbilityByIndex(Heroes, 5), 'damage')
+                        local LionSpellAmplification = NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE) + NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE_UNIQUE)
+                        local FingerDamage = 0
+
+                        if (NPC.HasModifier(Heroes, 'modifier_item_ultimate_scepter') or NPC.HasModifier(Heroes, 'modifier_item_ultimate_scepter_consumed') or NPC.HasModifier(Heroes, 'modifier_item_ultimate_scepter_consumed_alchemist')) then
+                            local CounterModifier = NPC.GetModifier(Heroes, 'modifier_lion_finger_of_death_kill_counter')
+                            if (CounterModifier) then
+                                local KillCounter = Modifier.GetStackCount(CounterModifier)
+                                local AdditionalDamage = 0
+                                if (Ability.GetLevel(NPC.GetAbility(Heroes, 'special_bonus_unique_lion_8')) > 0) then
+                                    AdditionalDamage = 60 * KillCounter
+                                    FingerDamage = (FingerBasicDamage + AdditionalDamage)
+                                else
+                                    AdditionalDamage = 40 * KillCounter 
+                                    FingerDamage = (FingerBasicDamage + AdditionalDamage)
+                                end
+                            end
+                        else
+                            FingerDamage = FingerBasicDamage
+                        end
+
+                        FingerDamage = (FingerDamage + (FingerBasicDamage * (LionSpellAmplification * 0.01))) * NPC.GetMagicalArmorDamageMultiplier(LionFacing)
+
+                        if (NPC.IsEntityInRange(MyHero, LionFacing, GraveRange)) then
+                            if (Entity.GetHealth(LionFacing) < FingerDamage) then
+                                if (HeroSettings[LionFacing]) then
+                                    if (HeroSettings[LionFacing].enabled) then
+                                        return LionFacing
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    -- Save from Thundergods Wrath (maybe TODO: make a particle detect)
+                    if (NPC.GetUnitName(Heroes) == 'npc_dota_hero_zuus' and Menu.IsSelected(dazzle.DNGSavingSkills, 'thundergods_wrath') and NPC.IsEntityInRange(MyHero, FriendlyHeroes, GraveRange) and Ability.IsInAbilityPhase(NPC.GetAbilityByIndex(Heroes, 5))) then
+                        local ThundergodsWrathBasicDamage = 0
+                        if (Ability.GetLevel(NPC.GetAbility(Heroes, 'special_bonus_unique_zeus_4')) > 0) then
+                            ThundergodsWrathBasicDamage = Ability.GetLevelSpecialValueFor(NPC.GetAbilityByIndex(Heroes, 5), 'damage') + 100
+                        else
+                            ThundergodsWrathBasicDamage = Ability.GetLevelSpecialValueFor(NPC.GetAbilityByIndex(Heroes, 5), 'damage')
+                        end
+                        local ZuusSpellAmplification = NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE) + NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE_UNIQUE)
+                        local ThundergodsWrathDamage = (ThundergodsWrathBasicDamage + (ThundergodsWrathBasicDamage * (ZuusSpellAmplification * 0.01))) * NPC.GetMagicalArmorDamageMultiplier(FriendlyHeroes)
+
+                        if (NPC.HasModifier(Heroes, 'modifier_zuus_static_field')) then
+                            ThundergodsWrathDamage = ThundergodsWrathDamage + (ThundergodsWrathDamage * (8 * 0.014))
+                        end
+
+                        if (Entity.GetHealth(FriendlyHeroes) < ThundergodsWrathBasicDamage) then
+                            if (HeroSettings[FriendlyHeroes]) then
+                                if (HeroSettings[FriendlyHeroes].enabled) then
+                                    return FriendlyHeroes
+                                end
+                            end
+                        end
+                    end
+                    -- Saving from SonicWave
+                    local QOPFacing = dazzle.CustomFindFacingNPC(Heroes, nil, Enum.TeamType.TEAM_ENEMY, 20, Heroes, 15)
+                    if (NPC.GetUnitName(Heroes) == 'npc_dota_hero_queenofpain' and Menu.IsSelected(dazzle.DNGSavingSkills, 'sonic_wave') and Ability.IsInAbilityPhase(NPC.GetAbilityByIndex(Heroes, 5)) and QOPFacing and not NPC.IsTurning(Heroes)) then
+                        local SonicBasicDamage = Ability.GetLevelSpecialValueFor(NPC.GetAbilityByIndex(Heroes, 5), 'damage')
+                        local QOPSpellAmplification = NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE) + NPC.GetModifierProperty(Heroes, Enum.ModifierFunction.MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE_UNIQUE)
+                        local SonicDamage = SonicBasicDamage + (SonicBasicDamage * (QOPSpellAmplification * 0.01))
+
+                        if (NPC.IsEntityInRange(MyHero, QOPFacing, GraveRange)) then
+                            if (Entity.GetHealth(QOPFacing) < SonicDamage) then
+                                if (HeroSettings[QOPFacing]) then
+                                    if (HeroSettings[QOPFacing].enabled) then
+                                        return QOPFacing
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        return false
+    end
+end
+
+-- Experimental end
 
 function dazzle.OnUpdate()
 
@@ -368,6 +500,8 @@ function dazzle.OnUpdate()
         GameTime = GameRules.GetGameTime()
         if (Timer > GameTime) then return end
         Timer = HeroesCore.GetSleep(0.1)
+
+        dazzle.SavingFromDangerousSkills()
 
         -- Updater
         dazzle.UpdateInfo()
@@ -386,6 +520,7 @@ function dazzle.OnUpdate()
         then return end
 
         local RightHero = dazzle.GetTheRightHero()
+        local DangerousSkillsNeedSave = dazzle.SavingFromDangerousSkills()
 
         -- Auto Grave
         if (Menu.IsEnabled(dazzle.AutoSaveEnable)) then
@@ -399,6 +534,15 @@ function dazzle.OnUpdate()
                             Ability.CastTarget(ShallowGrave, RightHero)
                         end
                     end
+                end
+            end
+        end
+
+        -- Auto save from dangerous skills
+        if (Menu.IsEnabled(dazzle.AutoSaveEnable) and Menu.IsEnabled(dazzle.DNGSavingEnable)) then
+            if (Ability.IsCastable(ShallowGrave, MyMana)) then
+                if (not dazzle.NotAvailableModifs(DangerousSkillsNeedSave)) then
+                    Ability.CastTarget(ShallowGrave, DangerousSkillsNeedSave)
                 end
             end
         end
